@@ -13,7 +13,7 @@ function App() {
   const [data, setData] = useState<Data | null>(null);
 
   useEffect(() => {
-    fetch('curl -X GET https://sellcustombackend.onrender.com/api/data') // Update with your backend URL
+    fetch('https://sellcustombackend.onrender.com/api/data') // Update with your backend URL
       .then(response => response.json())
       .then(data => setData(data));
   }, []);
