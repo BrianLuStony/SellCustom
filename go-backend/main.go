@@ -2,44 +2,45 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 
+	"go-backend/db"
+	"go-backend/resolvers"
+
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 )
 
-func main() {
-
-	schemaData, err := ioutil.ReadFile("schema.graphql")
+func LoadSchema(schemaPath string) string {
+	schemaBytes, err := ioutil.ReadFile(schemaPath)
 	if err != nil {
-		fmt.Println("Error reading schema:", err)
-		return
+		log.Fatalf("Failed to read schema file: %v", err)
 	}
+	return string(schemaBytes)
+}
 
-	// // Parse the schema
-	// schema, err := graphql.ParseSchema(string(schemaData), nil)
-	// if err != nil {
-	// 	fmt.Println("Error parsing schema:", err)
-	// 	return
-	// }
+func main() {
+	// Initialize the database connection
+	db.InitDB()
 
-	initDB()
-	defer db.Close()
+	// Load the GraphQL schema from the file
+	schemaPath := "schema/schema.graphql"
+	schemaString := LoadSchema(schemaPath)
 
-	parsedSchema := graphql.MustParseSchema(string(schemaData), &Resolver{})
+	// Parse the schema
+	schema := graphql.MustParseSchema(schemaString, &resolvers.Resolver{})
 
-	http.Handle("/graphql", &relay.Handler{Schema: parsedSchema})
-
-	log.Println("Server is running on http://localhost:8080/graphql")
-	log.Fatal(http.ListenAndServe(":8080", nil))
-
+	// Create a new mux router
 	r := mux.NewRouter()
+
+	// Set up the GraphQL endpoint
+	r.Handle("/graphql", &relay.Handler{Schema: schema}).Methods("POST")
+
+	// Set up the REST endpoint
 	r.HandleFunc("/api/data", GetData).Methods("GET")
 
 	// CORS configuration
@@ -47,7 +48,9 @@ func main() {
 	corsOrigins := handlers.AllowedOrigins([]string{"*"}) // Allow all origins or specify your frontend URL
 	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
 
-	http.ListenAndServe(":8080", handlers.CORS(corsHeaders, corsOrigins, corsMethods)(r))
+	// Start the server with CORS middleware
+	log.Println("Server is running on http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(corsHeaders, corsOrigins, corsMethods)(r)))
 }
 
 func GetData(w http.ResponseWriter, r *http.Request) {

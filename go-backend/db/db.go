@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"database/sql"
@@ -9,9 +9,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var db *sql.DB
+var DB *sql.DB
 
-func initDB() {
+func InitDB() {
 	// Use the External Database URL from Render
 	var err error
 
@@ -25,12 +25,12 @@ func initDB() {
 		log.Fatal("DATABASE_URL environment variable is not set")
 	}
 
-	db, err = sql.Open("postgres", connStr)
+	DB, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if err = db.Ping(); err != nil {
+	if err = DB.Ping(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -102,7 +102,7 @@ func createTables() {
 	}
 
 	for _, table := range tables {
-		_, err := db.Exec(table)
+		_, err := DB.Exec(table)
 		if err != nil {
 			log.Fatal(err)
 		}

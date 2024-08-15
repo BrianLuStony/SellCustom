@@ -2,98 +2,112 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"go-backend/db"
+	"go-backend/models"
 
-	"github.com/graphql-go/graphql"
+	"github.com/graph-gophers/graphql-go"
 )
 
-type Resolver struct {
-}
+type Resolver struct{}
 
-// Product represents a product in the database
-type Product struct {
-	ID            int       `json:"id"`
-	Name          string    `json:"name"`
-	Description   *string   `json:"description,omitempty"` // Allow null descriptions
-	Price         float64   `json:"price"`
-	StockQuantity int       `json:"stockQuantity"`
-	CategoryID    int       `json:"categoryId"`
-	Category      *Category `json:"category,omitempty"` // Optional field to hold category data
-	Reviews       []*Review `json:"reviews,omitempty"`  // Optional field to hold reviews
-}
-
-// ProductResolver resolves fields for the Product type
-type ProductResolver struct {
-	p Product
-}
-
-// Category represents a category in the database
-type Category struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-// CategoryResolver resolves fields for the Category type
-type CategoryResolver struct {
-	c Category
-}
-
-// Review represents a review in the database
-type Review struct {
-	ID        int    `json:"id"`
-	ProductID int    `json:"productId"`
-	UserID    int    `json:"userId"`
-	Rating    int    `json:"rating"`
-	Comment   string `json:"comment"`
-	CreatedAt string `json:"createdAt"`
-}
-
-// ReviewResolver resolves fields for the Review type
-type ReviewResolver struct {
-	r Review
-}
-
-// Query represents the root query type
-type Query struct {
-	Resolver *Resolver
-}
-
-// Mutation represents the root mutation type
-type Mutation struct {
-	Resolver *Resolver
-}
-
-// Product returns a product by ID
 func (r *Resolver) Product(ctx context.Context, args struct{ ID graphql.ID }) (*ProductResolver, error) {
-	var p Product
-	err := db.QueryRow("SELECT id, name, description, price, stock_quantity, category_id FROM products WHERE id = $1", args.ID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
+	var p models.Product
+	err := db.DB.QueryRow("SELECT id, name, description, price, stock_quantity, category_id FROM products WHERE id = $1", args.ID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
 	if err != nil {
 		return nil, err
 	}
 	return &ProductResolver{p}, nil
 }
 
-// (Implement other resolvers for Product fields like Category and Reviews)
+func (r *Resolver) Products(ctx context.Context, args struct{ Category, Search *string }) ([]*ProductResolver, error) {
+	// Implement product listing based on category and search
+	// Example query below
+	var rows *sql.Rows
+	var err error
+	if args.Category != nil {
+		rows, err = db.DB.Query("SELECT id, name, description, price, stock_quantity, category_id FROM products WHERE category_id = $1", args.Category)
+	} else if args.Search != nil {
+		searchPattern := "%" + *args.Search + "%"
+		rows, err = db.DB.Query("SELECT id, name, description, price, stock_quantity, category_id FROM products WHERE name ILIKE $1", searchPattern)
+	} else {
+		rows, err = db.DB.Query("SELECT id, name, description, price, stock_quantity, category_id FROM products")
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []*ProductResolver
+	for rows.Next() {
+		var p models.Product
+		if err := rows.Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID); err != nil {
+			return nil, err
+		}
+		products = append(products, &ProductResolver{p})
+	}
+
+	return products, nil
+}
+
+func (r *Resolver) Categories(ctx context.Context) ([]*CategoryResolver, error) {
+	rows, err := db.DB.Query("SELECT id, name, parent_category_id FROM categories")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []*CategoryResolver
+	for rows.Next() {
+		var c models.Category
+		if err := rows.Scan(&c.ID, &c.Name, &c.ParentCategory.ID); err != nil {
+			return nil, err
+		}
+		categories = append(categories, &CategoryResolver{c})
+	}
+
+	return categories, nil
+}
+
+// Define other resolvers for Order, Review, etc.
+
+type ProductResolver struct {
+	p models.Product
+}
+
+func (r *ProductResolver) ID() graphql.ID {
+	return graphql.ID(fmt.Sprint(r.p.ID))
+}
+
+func (r *ProductResolver) Name() string {
+	return r.p.Name
+}
+
+func (r *ProductResolver) Description() *string {
+	return r.p.Description
+}
+
+func (r *ProductResolver) Price() float64 {
+	return r.p.Price
+}
+
+func (r *ProductResolver) StockQuantity() int {
+	return r.p.StockQuantity
+}
 
 func (r *ProductResolver) Category(ctx context.Context) (*CategoryResolver, error) {
-	// Implement logic to fetch category based on product.CategoryID
-	// and return a CategoryResolver instance
-	return nil, nil // Replace with actual implementation
+	var c models.Category
+	err := db.DB.QueryRow("SELECT id, name, parent_category_id FROM categories WHERE id = $1", r.p.CategoryID).Scan(&c.ID, &c.Name, &c.ParentCategory.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &CategoryResolver{c}, nil
 }
 
-func (r *ProductResolver) Reviews(ctx context.Context) ([]*ReviewResolver, error) {
-	// Implement logic to fetch reviews for the product
-	// and return an array of ReviewResolver instances
-	return nil, nil // Replace with actual implementation
+// Implement resolvers for Product.Images, Product.Attributes, Product.Reviews, etc.
+
+type CategoryResolver struct {
+	c models.Category
 }
-
-// (Implement resolvers for other types like Category, User, Order, etc.)
-
-// Define other resolver functions and types following similar patterns ...
-
-// var RootQuery = Query{
-//   Resolver: &Resolver{db: db}, // Replace with actual database connection
-// }
-
-// var RootMutation = Mutation{
-//   Resolver: &Resolver{db: db}, // Replace with actual database connection
-// }
