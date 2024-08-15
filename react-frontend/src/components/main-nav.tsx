@@ -17,9 +17,9 @@ import { Link } from 'react-router-dom';
 
 export function MainNav() {
   return (
-    <div className="flex gap-4 items-center ">
-      <CustomLink href="/">
-        <Button variant="ghost" className="p-0 dark:hover:bg-blue-600">
+    <div className="flex gap-6 items-center p-2">
+      <CustomLink href="/" className="mr-2">
+        <Button variant="ghost" className="p-2 dark:hover:bg-blue-600 rounded-full">
           <img
             src="/vite.svg"
             alt="Home"
@@ -33,8 +33,16 @@ export function MainNav() {
         <NavigationMenuList>
           <NavigationMenuItem>
             <NavigationMenuLink
+              href="/product"
+              className={cn(navigationMenuTriggerStyle(), "bg-blue-500 dark:text-gray-200 dark:bg-primary hover:bg-gray-200 dark:hover:bg-blue-600 px-4 py-2 rounded-md")}
+            >
+              Product
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <NavigationMenuLink
               href="/about"
-              className={cn(navigationMenuTriggerStyle(), "bg-blue-500 dark:text-gray-200 dark:bg-primary hover:bg-gray-200 dark:hover:bg-blue-600")}
+              className={cn(navigationMenuTriggerStyle(), "bg-blue-500 dark:text-gray-200 dark:bg-primary hover:bg-gray-200 dark:hover:bg-blue-600 px-4 py-2 rounded-md")}
             >
               About
             </NavigationMenuLink>

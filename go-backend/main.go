@@ -2,13 +2,43 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 )
 
 func main() {
+
+	schemaData, err := ioutil.ReadFile("schema.graphql")
+	if err != nil {
+		fmt.Println("Error reading schema:", err)
+		return
+	}
+
+	// // Parse the schema
+	// schema, err := graphql.ParseSchema(string(schemaData), nil)
+	// if err != nil {
+	// 	fmt.Println("Error parsing schema:", err)
+	// 	return
+	// }
+
+	initDB()
+	defer db.Close()
+
+	parsedSchema := graphql.MustParseSchema(string(schemaData), &Resolver{})
+
+	http.Handle("/graphql", &relay.Handler{Schema: parsedSchema})
+
+	log.Println("Server is running on http://localhost:8080/graphql")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+
 	r := mux.NewRouter()
 	r.HandleFunc("/api/data", GetData).Methods("GET")
 

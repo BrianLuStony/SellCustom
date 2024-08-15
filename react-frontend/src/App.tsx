@@ -22,14 +22,17 @@ function App() {
 
   return (
     <>
-      <Router>
-        <MainNav />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
+     <Router>
+        <div className="flex flex-col min-h-screen w-full bg-gray-100 dark:bg-slate-800">
+            <MainNav />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/product" element={<About />} />
+            </Routes>
+            {data ? <div>{data.message}</div> : 'loading'}
+          </div>
       </Router>
-        
     </>
   )
 }
