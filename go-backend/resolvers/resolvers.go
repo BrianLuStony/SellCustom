@@ -221,6 +221,15 @@ func (r *ReviewResolver) Comment() *string {
 	return &r.r.Comment
 }
 
+func (r *ReviewResolver) Product(ctx context.Context) (*ProductResolver, error) {
+	var p models.Product
+	err := db.DB.QueryRow("SELECT id, name, description, price, stock_quantity, category_id FROM products WHERE id = $1", r.r.ProductID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+	return &ProductResolver{p}, nil
+}
+
 // CategoryResolver resolves the Category type
 type CategoryResolver struct {
 	c models.Category
