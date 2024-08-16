@@ -93,8 +93,8 @@ func (r *ProductResolver) Price() float64 {
 	return r.p.Price
 }
 
-func (r *ProductResolver) StockQuantity() int {
-	return r.p.StockQuantity
+func (r *ProductResolver) StockQuantity() int32 {
+	return int32(r.p.StockQuantity)
 }
 
 func (r *ProductResolver) Category(ctx context.Context) (*CategoryResolver, error) {
