@@ -67,3 +67,48 @@ type Review struct {
 	Comment   string   `json:"comment"`
 	CreatedAt string   `json:"createdAt"`
 }
+
+type Query struct {
+	Product    func(id int) (*Product, error)
+	Products   func(category *int, search *string) ([]*Product, error)
+	Categories func() ([]*Category, error)
+	Order      func(id int) (*Order, error)
+	UserOrders func(userId int) ([]*Order, error)
+}
+
+// Mutation represents the root mutation type
+type Mutation struct {
+	CreateProduct func(input ProductInput) (*Product, error)
+	UpdateProduct func(id int, input ProductInput) (*Product, error)
+	DeleteProduct func(id int) (bool, error)
+	CreateOrder   func(input OrderInput) (*Order, error)
+	CreateReview  func(input ReviewInput) (*Review, error)
+}
+
+type ProductInput struct {
+	Name          string  `json:"name"`
+	Description   *string `json:"description,omitempty"`
+	Price         float64 `json:"price"`
+	StockQuantity int     `json:"stockQuantity"`
+	CategoryID    int     `json:"categoryId"`
+}
+
+// OrderInput model
+type OrderInput struct {
+	UserID int               `json:"userId"`
+	Items  []*OrderItemInput `json:"items"`
+}
+
+// OrderItemInput model
+type OrderItemInput struct {
+	ProductID int `json:"productId"`
+	Quantity  int `json:"quantity"`
+}
+
+// ReviewInput model
+type ReviewInput struct {
+	ProductID int    `json:"productId"`
+	UserID    int    `json:"userId"`
+	Rating    int    `json:"rating"`
+	Comment   string `json:"comment"`
+}
