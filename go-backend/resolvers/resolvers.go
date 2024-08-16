@@ -220,6 +220,9 @@ func (r *ReviewResolver) Rating() int32 {
 func (r *ReviewResolver) Comment() *string {
 	return &r.r.Comment
 }
+func (r *ReviewResolver) CreatedAt() string {
+	return r.r.CreatedAt
+}
 
 func (r *ReviewResolver) Product(ctx context.Context) (*ProductResolver, error) {
 	var p models.Product
