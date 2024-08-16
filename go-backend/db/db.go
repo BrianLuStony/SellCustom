@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
@@ -15,10 +14,10 @@ func InitDB() {
 	// Use the External Database URL from Render
 	var err error
 
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	// err = godotenv.Load()
+	// if err != nil {
+	// 	log.Fatal("Error loading .env file")
+	// }
 
 	connStr := os.Getenv("DATABASE_URL")
 	if connStr == "" {

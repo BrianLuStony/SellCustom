@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"go-backend/db"
 	"go-backend/resolvers"
@@ -16,7 +16,7 @@ import (
 )
 
 func LoadSchema(schemaPath string) string {
-	schemaBytes, err := ioutil.ReadFile(schemaPath)
+	schemaBytes, err := os.ReadFile(schemaPath)
 	if err != nil {
 		log.Fatalf("Failed to read schema file: %v", err)
 	}
