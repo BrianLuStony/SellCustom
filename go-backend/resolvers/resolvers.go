@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-backend/db"
 	"go-backend/models"
+	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
 )
@@ -51,6 +52,26 @@ func (r *Resolver) Products(ctx context.Context, args struct{ Category, Search *
 	}
 
 	return products, nil
+}
+
+// Resolves a list of orders
+func (r *Resolver) Orders(ctx context.Context) ([]*OrderResolver, error) {
+	rows, err := db.DB.Query("SELECT id, user_id, total_amount, status, created_at FROM orders")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*OrderResolver
+	for rows.Next() {
+		var o models.Order
+		if err := rows.Scan(&o.ID, &o.UserID, &o.TotalAmount, &o.Status, &o.CreatedAt); err != nil {
+			return nil, err
+		}
+		orders = append(orders, &OrderResolver{o})
+	}
+
+	return orders, nil
 }
 
 // Resolves a list of all categories
@@ -406,4 +427,134 @@ func (r *OrderItemResolver) Quantity() int {
 // Resolve PriceAtTime field
 func (r *OrderItemResolver) PriceAtTime() float64 {
 	return r.oi.PriceAtTime
+}
+
+type QueryResolver struct {
+	q models.Query
+}
+
+func (r *QueryResolver) Product(ctx context.Context, args struct{ ID graphql.ID }) (*ProductResolver, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ID: %v", err)
+	}
+	product, err := r.q.Product(id)
+	if err != nil {
+		return nil, err
+	}
+	return &ProductResolver{*product}, nil
+}
+
+func (r *QueryResolver) Products(ctx context.Context, args struct {
+	Category *graphql.ID
+	Search   *string
+}) ([]*ProductResolver, error) {
+	var categoryID *int
+	if args.Category != nil {
+		id, err := strconv.Atoi(string(*args.Category))
+		if err != nil {
+			return nil, fmt.Errorf("invalid category ID: %v", err)
+		}
+		categoryID = &id
+	}
+	products, err := r.q.Products(categoryID, args.Search)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ProductResolver, len(products))
+	for i, p := range products {
+		resolvers[i] = &ProductResolver{*p}
+	}
+	return resolvers, nil
+}
+
+func (r *QueryResolver) Categories(ctx context.Context) ([]*CategoryResolver, error) {
+	categories, err := r.q.Categories()
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*CategoryResolver, len(categories))
+	for i, c := range categories {
+		resolvers[i] = &CategoryResolver{*c}
+	}
+	return resolvers, nil
+}
+
+func (r *QueryResolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*OrderResolver, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ID: %v", err)
+	}
+	order, err := r.q.Order(id)
+	if err != nil {
+		return nil, err
+	}
+	return &OrderResolver{*order}, nil
+}
+
+func (r *QueryResolver) UserOrders(ctx context.Context, args struct{ UserID graphql.ID }) ([]*OrderResolver, error) {
+	userID, err := strconv.Atoi(string(args.UserID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID: %v", err)
+	}
+	orders, err := r.q.UserOrders(userID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*OrderResolver, len(orders))
+	for i, o := range orders {
+		resolvers[i] = &OrderResolver{*o}
+	}
+	return resolvers, nil
+}
+
+type MutationResolver struct {
+	m models.Mutation
+}
+
+func (r *MutationResolver) CreateProduct(ctx context.Context, args struct{ Input models.ProductInput }) (*ProductResolver, error) {
+	product, err := r.m.CreateProduct(args.Input)
+	if err != nil {
+		return nil, err
+	}
+	return &ProductResolver{*product}, nil
+}
+
+func (r *MutationResolver) UpdateProduct(ctx context.Context, args struct {
+	ID    graphql.ID
+	Input models.ProductInput
+}) (*ProductResolver, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ID: %v", err)
+	}
+	product, err := r.m.UpdateProduct(id, args.Input)
+	if err != nil {
+		return nil, err
+	}
+	return &ProductResolver{*product}, nil
+}
+
+func (r *MutationResolver) DeleteProduct(ctx context.Context, args struct{ ID graphql.ID }) (bool, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return false, fmt.Errorf("invalid ID: %v", err)
+	}
+	return r.m.DeleteProduct(id)
+}
+
+func (r *MutationResolver) CreateOrder(ctx context.Context, args struct{ Input models.OrderInput }) (*OrderResolver, error) {
+	order, err := r.m.CreateOrder(args.Input)
+	if err != nil {
+		return nil, err
+	}
+	return &OrderResolver{*order}, nil
+}
+
+func (r *MutationResolver) CreateReview(ctx context.Context, args struct{ Input models.ReviewInput }) (*ReviewResolver, error) {
+	review, err := r.m.CreateReview(args.Input)
+	if err != nil {
+		return nil, err
+	}
+	return &ReviewResolver{*review}, nil
 }
