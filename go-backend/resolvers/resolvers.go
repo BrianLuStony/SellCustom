@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-backend/db"
 	"go-backend/models"
+	"log"
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
@@ -481,6 +482,7 @@ func (r *QueryResolver) Categories(ctx context.Context) ([]*CategoryResolver, er
 }
 
 func (r *QueryResolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*OrderResolver, error) {
+	log.Printf("Resolving Order for ID: %s", args.ID)
 	id, err := strconv.Atoi(string(args.ID))
 	if err != nil {
 		return nil, fmt.Errorf("invalid ID: %v", err)
