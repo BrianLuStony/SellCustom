@@ -75,6 +75,19 @@ func (r *Resolver) Orders(ctx context.Context) ([]*OrderResolver, error) {
 	return orders, nil
 }
 
+func (r *Resolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*OrderResolver, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ID: %v", err)
+	}
+	var o models.Order
+	err = db.DB.QueryRow("SELECT id, user_id, total_amount, status, created_at FROM orders WHERE id = $1", id).Scan(&o.ID, &o.UserID, &o.TotalAmount, &o.Status, &o.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &OrderResolver{o}, nil
+}
+
 // Resolves a list of all categories
 func (r *Resolver) Categories(ctx context.Context) ([]*CategoryResolver, error) {
 	rows, err := db.DB.Query("SELECT id, name, parent_category_id FROM categories")
