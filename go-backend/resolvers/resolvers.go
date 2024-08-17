@@ -88,6 +88,43 @@ func (r *Resolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*Or
 	return &OrderResolver{o}, nil
 }
 
+func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.ProductInput }) (*ProductResolver, error) {
+	// Start a transaction
+	tx, err := db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Insert the new product
+	var productID int
+	err = tx.QueryRow(`
+        INSERT INTO products (name, description, price, stock_quantity, category_id)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+    `, args.Input.Name, args.Input.Description, args.Input.Price, args.Input.StockQuantity, args.Input.CategoryID).Scan(&productID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// Fetch the newly created product
+	var p models.Product
+	err = db.DB.QueryRow(`
+        SELECT id, name, description, price, stock_quantity, category_id
+        FROM products WHERE id = $1
+    `, productID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProductResolver{p}, nil
+}
+
 func (r *Resolver) UserOrders(ctx context.Context, args struct{ UserID graphql.ID }) ([]*OrderResolver, error) {
 	userID, err := strconv.Atoi(string(args.UserID))
 	if err != nil {
