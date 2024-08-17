@@ -434,8 +434,8 @@ func (r *OrderItemResolver) Product(ctx context.Context) (*ProductResolver, erro
 }
 
 // Resolve Quantity field
-func (r *OrderItemResolver) Quantity() int {
-	return r.oi.Quantity
+func (r *OrderItemResolver) Quantity() int32 {
+	return int32(r.oi.Quantity)
 }
 
 // Resolve PriceAtTime field
