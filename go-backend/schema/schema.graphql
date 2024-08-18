@@ -100,5 +100,5 @@ input ReviewInput {
     productId: ID!
     userId: ID!
     rating: Int!
-    comment: String
+    comment: String!
 }
