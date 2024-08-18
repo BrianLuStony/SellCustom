@@ -1,0 +1,89 @@
+package resolvers
+
+import (
+	"context"
+	"go-backend/db"
+	"go-backend/models"
+
+	"github.com/graph-gophers/graphql-go"
+)
+
+func (r *Resolver) Reviews(ctx context.Context) ([]*ReviewResolver, error) {
+	rows, err := db.DB.Query("SELECT id, product_id, user_id, rating, comment, created_at FROM reviews")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reviews []*ReviewResolver
+	for rows.Next() {
+		var rev models.Review
+		if err := rows.Scan(&rev.ID, &rev.ProductID, &rev.UserID, &rev.Rating, &rev.Comment, &rev.CreatedAt); err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, &ReviewResolver{rev})
+	}
+
+	return reviews, nil
+}
+
+func (r *Resolver) Review(ctx context.Context, args struct{ ID graphql.ID }) (*ReviewResolver, error) {
+	var rev models.Review
+	err := db.DB.QueryRow("SELECT id, product_id, user_id, rating, comment, created_at FROM reviews WHERE id = $1", args.ID).Scan(&rev.ID, &rev.ProductID, &rev.UserID, &rev.Rating, &rev.Comment, &rev.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &ReviewResolver{rev}, nil
+}
+
+func (r *Resolver) CreateReview(ctx context.Context, args struct{ Input models.ReviewInput }) (*ReviewResolver, error) {
+	tx, err := db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var reviewID int
+	err = tx.QueryRow(`
+        INSERT INTO reviews (product_id, user_id, rating, comment, created_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        RETURNING id
+    `, args.Input.ProductID, args.Input.UserID, args.Input.Rating, args.Input.Comment).Scan(&reviewID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	var rev models.Review
+	err = db.DB.QueryRow(`
+        SELECT id, product_id, user_id, rating, comment, created_at
+        FROM reviews WHERE id = $1
+    `, reviewID).Scan(&rev.ID, &rev.ProductID, &rev.UserID, &rev.Rating, &rev.Comment, &rev.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReviewResolver{rev}, nil
+}
+
+func (r *Resolver) ProductReviews(ctx context.Context, args struct{ ProductID graphql.ID }) ([]*ReviewResolver, error) {
+	rows, err := db.DB.Query("SELECT id, product_id, user_id, rating, comment, created_at FROM reviews WHERE product_id = $1", args.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reviews []*ReviewResolver
+	for rows.Next() {
+		var rev models.Review
+		if err := rows.Scan(&rev.ID, &rev.ProductID, &rev.UserID, &rev.Rating, &rev.Comment, &rev.CreatedAt); err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, &ReviewResolver{rev})
+	}
+
+	return reviews, nil
+}

@@ -12,7 +12,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 )
 
-type Resolver struct{}
+type Resolver struct {
+	Query    *QueryResolver
+	Mutation *MutationResolver
+}
 
 // Resolves a single product by ID
 func (r *Resolver) Product(ctx context.Context, args struct{ ID graphql.ID }) (*ProductResolver, error) {
@@ -123,6 +126,142 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 	}
 
 	return &ProductResolver{p}, nil
+}
+
+func (r *Resolver) UpdateProduct(ctx context.Context, args struct {
+	ID    graphql.ID
+	Input models.ProductInput
+}) (*ProductResolver, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid ID: %v", err)
+	}
+
+	// Start a transaction
+	tx, err := db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Update the product
+	_, err = tx.Exec(`
+        UPDATE products
+        SET name = $1, description = $2, price = $3, stock_quantity = $4, category_id = $5
+        WHERE id = $6
+    `, args.Input.Name, args.Input.Description, args.Input.Price, args.Input.StockQuantity, args.Input.CategoryID, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// Fetch the updated product
+	var p models.Product
+	err = db.DB.QueryRow(`
+        SELECT id, name, description, price, stock_quantity, category_id
+        FROM products WHERE id = $1
+    `, id).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ProductResolver{p}, nil
+}
+
+func (r *Resolver) DeleteProduct(ctx context.Context, args struct{ ID graphql.ID }) (bool, error) {
+	id, err := strconv.Atoi(string(args.ID))
+	if err != nil {
+		return false, fmt.Errorf("invalid ID: %v", err)
+	}
+
+	result, err := db.DB.Exec("DELETE FROM products WHERE id = $1", id)
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}
+
+func (r *Resolver) CreateOrder(ctx context.Context, args struct{ Input models.OrderInput }) (*OrderResolver, error) {
+	// Start a transaction
+	tx, err := db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Insert the new order
+	var orderID int
+	err = tx.QueryRow(`
+        INSERT INTO orders (user_id, total_amount, status)
+        VALUES ($1, $2, $3)
+        RETURNING id
+    `, args.Input.UserID, args.Input.TotalAmount, "PENDING").Scan(&orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Insert order items
+	for _, item := range args.Input.Items {
+		_, err = tx.Exec(`
+            INSERT INTO order_items (order_id, product_id, quantity, price_at_time)
+            VALUES ($1, $2, $3, (SELECT price FROM products WHERE id = $2))
+        `, orderID, item.ProductID, item.Quantity)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// Fetch the newly created order
+	var o models.Order
+	err = db.DB.QueryRow(`
+        SELECT id, user_id, total_amount, status, created_at
+        FROM orders WHERE id = $1
+    `, orderID).Scan(&o.ID, &o.UserID, &o.TotalAmount, &o.Status, &o.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &OrderResolver{o}, nil
+}
+
+func (r *Resolver) CreateReview(ctx context.Context, args struct{ Input models.ReviewInput }) (*ReviewResolver, error) {
+	// Insert the new review
+	var reviewID int
+	err := db.DB.QueryRow(`
+        INSERT INTO reviews (product_id, user_id, rating, comment)
+        VALUES ($1, $2, $3, $4)
+        RETURNING id
+    `, args.Input.ProductID, args.Input.UserID, args.Input.Rating, args.Input.Comment).Scan(&reviewID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch the newly created review
+	var rev models.Review
+	err = db.DB.QueryRow(`
+        SELECT id, product_id, user_id, rating, comment, created_at
+        FROM reviews WHERE id = $1
+    `, reviewID).Scan(&rev.ID, &rev.ProductID, &rev.UserID, &rev.Rating, &rev.Comment, &rev.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReviewResolver{rev}, nil
 }
 
 func (r *Resolver) UserOrders(ctx context.Context, args struct{ UserID graphql.ID }) ([]*OrderResolver, error) {

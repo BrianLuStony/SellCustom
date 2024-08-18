@@ -95,8 +95,9 @@ type ProductInput struct {
 
 // OrderInput model
 type OrderInput struct {
-	UserID int               `json:"userId"`
-	Items  []*OrderItemInput `json:"items"`
+	UserID      int               `json:"userId"`
+	Items       []*OrderItemInput `json:"items"`
+	TotalAmount float64           `json:"totalAmount"`
 }
 
 // OrderItemInput model

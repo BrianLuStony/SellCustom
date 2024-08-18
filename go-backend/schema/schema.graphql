@@ -87,6 +87,7 @@ input ProductInput {
 
 input OrderInput {
     userId: ID!
+    totalAmount: Float!
     items: [OrderItemInput!]!
 }
 
