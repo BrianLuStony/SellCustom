@@ -108,8 +108,8 @@ type OrderItemInput struct {
 
 // ReviewInput model
 type ReviewInput struct {
-	ProductID int    `json:"productId"`
-	UserID    int    `json:"userId"`
-	Rating    int    `json:"rating"`
-	Comment   string `json:"comment"`
+	ProductID int     `json:"productId"`
+	UserID    int     `json:"userId"`
+	Rating    int     `json:"rating"`
+	Comment   *string `json:"comment"`
 }
