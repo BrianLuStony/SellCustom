@@ -1,6 +1,7 @@
 import { MainNav } from "./MainNav"
 import { SearchBar } from "./SearchBar" // You'll need to create this component
 import { UserActions } from "./UserActions" // You'll need to create this component
+import { Link } from 'react-router-dom';
 
 export default function Header() {
   return (
@@ -10,9 +11,13 @@ export default function Header() {
           <MainNav />
           <SearchBar />
         </div>
+        <Link
+          to={`/`}
+        >
         <div className="flex-grow flex justify-center">
           Logo
         </div>
+        </Link>
         <UserActions />
       </div>
     </header>

@@ -5,6 +5,7 @@ import About from '@/pages/About';
 import Header from "@/components/header"
 import Footer from '@/components/footer';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
+import Cookies from 'js-cookie';
 import './App.css';
 
 interface Data {
@@ -13,12 +14,20 @@ interface Data {
 
 const App: React.FC = () => {
   const [data, setData] = useState<Data | null>(null);
-  const [showPopup, setShowPopup] = useState(true); // Manage visibility of the pop-up
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     fetch('https://sellcustombackend.onrender.com/api/data') // Update with your backend URL
       .then(response => response.json())
       .then(data => setData(data));
+
+    // Check if it's the user's first time visiting the website
+    const isFirstVisit = !Cookies.get('firstVisit');
+    if (isFirstVisit) {
+      // Set a cookie to indicate that the user has visited the website
+      Cookies.set('firstVisit', 'true', { expires: 30 }); // Expire in 1 year
+      setShowPopup(true);
+    }
   }, []);
 
   const handleClosePopup = () => {
@@ -27,16 +36,19 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="flex flex-col min-h-screen w-full bg-gray-100 dark:bg-slate-800">
+      <div className="App">
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/product" element={<About />} />
         </Routes>
         <Footer />
-        {data ? <div>{data.message}</div> : 'loading'}
-        {showPopup && <SubscriptionPopup onClose={handleClosePopup} />} {/* Display pop-up */}
+        {data ? (
+          <p>{data.message}</p>
+        ) : (
+          'loading'
+        )}
+        {showPopup && <SubscriptionPopup onClose={handleClosePopup} />}
       </div>
     </Router>
   );
