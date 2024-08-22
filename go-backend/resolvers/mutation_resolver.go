@@ -14,6 +14,9 @@ type MutationResolver struct {
 }
 
 func (r *MutationResolver) CreateProduct(ctx context.Context, args struct{ Input models.ProductInput }) (*ProductResolver, error) {
+	// Ensure stockQuantity is an int
+	args.Input.StockQuantity = int(args.Input.StockQuantity)
+
 	product, err := r.m.CreateProduct(args.Input)
 	if err != nil {
 		return nil, err

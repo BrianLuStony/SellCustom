@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from '@/pages/Home';
-import TestQuery from '@/pages/TestQuery';
+import AddProduct from './pages/AddProduct';
 import About from '@/pages/About';
 import Header from "@/components/header"
 import Footer from '@/components/footer';
@@ -15,12 +15,7 @@ interface Data {
 }
 const client = new ApolloClient({
   uri: 'https://sellcustombackend.onrender.com/graphql',
-  cache: new InMemoryCache(),
-  headers: {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-  },
+  cache: new InMemoryCache(),  
 });
 
 const App: React.FC = () => {
@@ -61,7 +56,7 @@ const App: React.FC = () => {
             'loading'
           )}
           {showPopup && <SubscriptionPopup onClose={handleClosePopup} />}
-          <TestQuery />
+          <AddProduct />
         </div>
       </Router>
     </ApolloProvider>
