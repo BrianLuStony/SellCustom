@@ -1,16 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from '@/pages/Home';
+import TestQuery from '@/pages/TestQuery';
 import About from '@/pages/About';
 import Header from "@/components/header"
 import Footer from '@/components/footer';
 import SubscriptionPopup from '@/components/SubscriptionPopup';
 import Cookies from 'js-cookie';
 import './App.css';
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 
 interface Data {
   message: string;
 }
+const client = new ApolloClient({
+  uri: 'https://sellcustombackend.onrender.com/graphql',
+  cache: new InMemoryCache(),
+  headers: {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  },
+});
 
 const App: React.FC = () => {
   const [data, setData] = useState<Data | null>(null);
@@ -35,22 +46,25 @@ const App: React.FC = () => {
   };
 
   return (
-    <Router>
-      <div className="App">
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-        <Footer />
-        {data ? (
-          <p>{data.message}</p>
-        ) : (
-          'loading'
-        )}
-        {showPopup && <SubscriptionPopup onClose={handleClosePopup} />}
-      </div>
-    </Router>
+    <ApolloProvider client={client}>
+      <Router>
+        <div className="App">
+          <Header />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
+          <Footer />
+          {data ? (
+            <p>{data.message}</p>
+          ) : (
+            'loading'
+          )}
+          {showPopup && <SubscriptionPopup onClose={handleClosePopup} />}
+          <TestQuery />
+        </div>
+      </Router>
+    </ApolloProvider>
   );
 };
 

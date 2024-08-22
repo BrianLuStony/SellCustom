@@ -11,6 +11,7 @@
     "preview": "nx vite:preview"
   },
   "dependencies": {
+    "@apollo/client": "^3.11.4",
     "@radix-ui/react-menubar": "^1.1.1",
     "@radix-ui/react-navigation-menu": "^1.2.0",
     "@radix-ui/react-slot": "^1.1.0",

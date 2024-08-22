@@ -37,20 +37,39 @@ func main() {
 	// Create a new mux router
 	r := mux.NewRouter()
 
-	// Set up the GraphQL endpoint
-	r.Handle("/graphql", &relay.Handler{Schema: schema}).Methods("POST")
+	// CORS configuration
+	corsHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	corsOrigins := handlers.AllowedOrigins([]string{"http://localhost:5173", "https://yourdomain.com"}) // Update with your frontend URLs
+	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+
+	// Set up the GraphQL endpoint with CORS
+	graphqlHandler := handlers.CORS(corsHeaders, corsOrigins, corsMethods)(&relay.Handler{Schema: schema})
+	r.Handle("/graphql", graphqlHandler).Methods("POST", "OPTIONS")
+
+	// Add a specific handler for OPTIONS requests to the GraphQL endpoint
+	r.HandleFunc("/graphql", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.WriteHeader(http.StatusOK)
+	}).Methods("OPTIONS")
 
 	// Set up the REST endpoint
 	r.HandleFunc("/api/data", GetData).Methods("GET")
 
-	// CORS configuration
-	corsHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	corsOrigins := handlers.AllowedOrigins([]string{"*"}) // Allow all origins or specify your frontend URL
-	corsMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
+	// Apply CORS middleware to the entire router
+	corsRouter := handlers.CORS(corsHeaders, corsOrigins, corsMethods)(r)
 
-	// Start the server with CORS middleware
-	log.Println("Server is running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(corsHeaders, corsOrigins, corsMethods)(r)))
+	// Determine port for HTTP service
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("Defaulting to port %s", port)
+	}
+
+	// Start the server with the CORS-enabled router
+	log.Printf("Server is running on http://localhost:%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, corsRouter))
 }
 
 func GetData(w http.ResponseWriter, r *http.Request) {
