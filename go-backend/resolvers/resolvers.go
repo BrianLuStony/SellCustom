@@ -14,6 +14,25 @@ import (
 type Resolver struct {
 	Query    *QueryResolver
 	Mutation *MutationResolver
+	ProductR *ProductResolver
+	Category *CategoryResolver
+	OrderR   *OrderResolver
+	Review   *ReviewResolver
+	User     *UserResolver
+	// Add other resolvers as needed
+}
+
+func NewResolver() *Resolver {
+	return &Resolver{
+		Query:    &QueryResolver{},
+		Mutation: &MutationResolver{},
+		ProductR: &ProductResolver{},
+		Category: &CategoryResolver{},
+		OrderR:   &OrderResolver{},
+		Review:   &ReviewResolver{},
+		User:     &UserResolver{},
+		// Initialize other resolvers
+	}
 }
 
 // Resolves a single product by ID
@@ -92,6 +111,9 @@ func (r *Resolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*Or
 
 func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.ProductInput }) (*ProductResolver, error) {
 	// Start a transaction
+
+	stockQuantity := int(args.Input.StockQuantity)
+
 	tx, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -104,7 +126,7 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
         INSERT INTO products (name, description, price, stock_quantity, category_id)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id
-    `, args.Input.Name, args.Input.Description, args.Input.Price, args.Input.StockQuantity, args.Input.CategoryID).Scan(&productID)
+    `, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, args.Input.CategoryID).Scan(&productID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,13 +164,14 @@ func (r *Resolver) UpdateProduct(ctx context.Context, args struct {
 		return nil, err
 	}
 	defer tx.Rollback()
+	stockQuantity := int(args.Input.StockQuantity)
 
 	// Update the product
 	_, err = tx.Exec(`
         UPDATE products
         SET name = $1, description = $2, price = $3, stock_quantity = $4, category_id = $5
         WHERE id = $6
-    `, args.Input.Name, args.Input.Description, args.Input.Price, args.Input.StockQuantity, args.Input.CategoryID, id)
+    `, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, args.Input.CategoryID, id)
 	if err != nil {
 		return nil, err
 	}
