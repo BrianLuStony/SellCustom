@@ -89,9 +89,11 @@ type ProductInput struct {
 	Name          string  `json:"name"`
 	Description   *string `json:"description,omitempty"`
 	Price         float64 `json:"price"`
-	StockQuantity int     `json:"stockQuantity"`
+	StockQuantity Int     `json:"stockQuantity"`
 	CategoryID    int     `json:"categoryId"`
 }
+
+type Int int
 
 // OrderInput model
 type OrderInput struct {
