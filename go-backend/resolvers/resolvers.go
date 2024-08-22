@@ -157,7 +157,6 @@ func (r *Resolver) UpdateProduct(ctx context.Context, args struct {
 	if err != nil {
 		return nil, fmt.Errorf("invalid ID: %v", err)
 	}
-
 	// Start a transaction
 	tx, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
