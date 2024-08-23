@@ -36,7 +36,7 @@ const AddProduct: React.FC = () => {
     const input = {
       ...productInput,
       price: parseFloat(productInput.price),
-      stockQuantity: Number(parseInt(productInput.stockQuantity, 10)),
+      stockQuantity: parseInt(productInput.stockQuantity, 10),
     };
     createProduct({ 
       variables: { 
