@@ -32,7 +32,7 @@ func main() {
 	schemaString := LoadSchema(schemaPath)
 
 	// Parse the schema
-	schema := graphql.MustParseSchema(schemaString, &resolvers.Resolver{})
+	schema := graphql.MustParseSchema(schemaString, resolvers.NewResolver())
 
 	// Create a new mux router
 	r := mux.NewRouter()
