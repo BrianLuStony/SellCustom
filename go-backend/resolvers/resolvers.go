@@ -113,6 +113,7 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 	// Start a transaction
 
 	stockQuantity := int(args.Input.StockQuantity)
+	category_id := int(args.Input.CategoryID)
 
 	tx, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -126,7 +127,7 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
         INSERT INTO products (name, description, price, stock_quantity, category_id)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id
-    `, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, args.Input.CategoryID).Scan(&productID)
+    `, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, category_id).Scan(&productID)
 	if err != nil {
 		return nil, err
 	}
