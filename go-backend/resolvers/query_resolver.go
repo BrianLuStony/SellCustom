@@ -15,10 +15,11 @@ type QueryResolver struct {
 }
 
 func (r *QueryResolver) Product(ctx context.Context, args struct{ ID graphql.ID }) (*ProductResolver, error) {
-	id, err := strconv.Atoi(string(args.ID))
+	id64, err := strconv.ParseInt(string(args.ID), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ID: %v", err)
 	}
+	id := int32(id64)
 	product, err := r.q.Product(id)
 	if err != nil {
 		return nil, err
@@ -30,12 +31,13 @@ func (r *QueryResolver) Products(ctx context.Context, args struct {
 	Category *graphql.ID
 	Search   *string
 }) ([]*ProductResolver, error) {
-	var categoryID *int
+	var categoryID *int32
 	if args.Category != nil {
-		id, err := strconv.Atoi(string(*args.Category))
+		id64, err := strconv.ParseInt(string(*args.Category), 10, 32)
 		if err != nil {
 			return nil, fmt.Errorf("invalid category ID: %v", err)
 		}
+		id := int32(id64)
 		categoryID = &id
 	}
 	products, err := r.q.Products(categoryID, args.Search)
@@ -63,10 +65,11 @@ func (r *QueryResolver) Categories(ctx context.Context) ([]*CategoryResolver, er
 
 func (r *QueryResolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*OrderResolver, error) {
 	log.Printf("Resolving Order for ID: %s", args.ID)
-	id, err := strconv.Atoi(string(args.ID))
+	id64, err := strconv.ParseInt(string(args.ID), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ID: %v", err)
 	}
+	id := int32(id64)
 	order, err := r.q.Order(id)
 	if err != nil {
 		return nil, err
@@ -75,10 +78,11 @@ func (r *QueryResolver) Order(ctx context.Context, args struct{ ID graphql.ID })
 }
 
 func (r *QueryResolver) UserOrders(ctx context.Context, args struct{ UserID graphql.ID }) ([]*OrderResolver, error) {
-	userID, err := strconv.Atoi(string(args.UserID))
+	userID64, err := strconv.ParseInt(string(args.UserID), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user ID: %v", err)
 	}
+	userID := int32(userID64)
 	orders, err := r.q.UserOrders(userID)
 	if err != nil {
 		return nil, err

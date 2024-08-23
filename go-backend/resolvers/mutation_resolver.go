@@ -26,10 +26,11 @@ func (r *MutationResolver) UpdateProduct(ctx context.Context, args struct {
 	ID    graphql.ID
 	Input models.ProductInput
 }) (*ProductResolver, error) {
-	id, err := strconv.Atoi(string(args.ID))
+	id64, err := strconv.ParseInt(string(args.ID), 10, 32)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ID: %v", err)
 	}
+	id := int32(id64)
 	product, err := r.m.UpdateProduct(id, args.Input)
 	if err != nil {
 		return nil, err
@@ -38,10 +39,11 @@ func (r *MutationResolver) UpdateProduct(ctx context.Context, args struct {
 }
 
 func (r *MutationResolver) DeleteProduct(ctx context.Context, args struct{ ID graphql.ID }) (bool, error) {
-	id, err := strconv.Atoi(string(args.ID))
+	id64, err := strconv.ParseInt(string(args.ID), 10, 32)
 	if err != nil {
 		return false, fmt.Errorf("invalid ID: %v", err)
 	}
+	id := int32(id64)
 	return r.m.DeleteProduct(id)
 }
 

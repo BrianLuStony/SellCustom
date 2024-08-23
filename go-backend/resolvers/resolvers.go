@@ -320,13 +320,13 @@ func (r *Resolver) Categories(ctx context.Context) ([]*CategoryResolver, error) 
 	var categories []*CategoryResolver
 	for rows.Next() {
 		var c models.Category
-		var parentCategoryID sql.NullInt64
+		var parentCategoryID sql.NullInt32
 		if err := rows.Scan(&c.ID, &c.Name, &parentCategoryID); err != nil {
 			return nil, err
 		}
 
 		if parentCategoryID.Valid {
-			c.ParentCategory = &models.Category{ID: int(parentCategoryID.Int64)}
+			c.ParentCategory = &models.Category{ID: parentCategoryID.Int32}
 		}
 
 		categories = append(categories, &CategoryResolver{c})
