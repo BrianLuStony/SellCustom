@@ -26,6 +26,7 @@ func LoadSchema(schemaPath string) string {
 func main() {
 	// Initialize the database connection
 	db.InitDB()
+	db.CheckTables()
 
 	// Load the GraphQL schema from the file
 	schemaPath := "schema/schema.graphql"

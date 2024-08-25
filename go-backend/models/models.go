@@ -77,11 +77,12 @@ type Query struct {
 }
 
 type Mutation struct {
-	CreateProduct func(input ProductInput) (*Product, error)
-	UpdateProduct func(id int32, input ProductInput) (*Product, error)
-	DeleteProduct func(id int32) (bool, error)
-	CreateOrder   func(input OrderInput) (*Order, error)
-	CreateReview  func(input ReviewInput) (*Review, error)
+	CreateProduct  func(input ProductInput) (*Product, error)
+	UpdateProduct  func(id int32, input ProductInput) (*Product, error)
+	DeleteProduct  func(id int32) (bool, error)
+	CreateOrder    func(input OrderInput) (*Order, error)
+	CreateReview   func(input ReviewInput) (*Review, error)
+	CreateCategory func(name string, parentID *int32) (*Category, error)
 }
 
 type ProductInput struct {
@@ -96,6 +97,11 @@ type OrderInput struct {
 	UserID      int32             `json:"userId"`
 	Items       []*OrderItemInput `json:"items"`
 	TotalAmount float64           `json:"totalAmount"`
+}
+
+type CategoryInput struct {
+	Name     string  `json:"name"`
+	ParentID *string `json:"parentId"`
 }
 
 type OrderItemInput struct {

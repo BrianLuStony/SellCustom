@@ -10,6 +10,23 @@ import (
 
 var DB *sql.DB
 
+func CheckTables() {
+	rows, err := DB.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
+	if err != nil {
+		log.Fatalf("Failed to query database tables: %v", err)
+	}
+	defer rows.Close()
+
+	log.Println("Tables in the database:")
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil {
+			log.Fatalf("Failed to scan table name: %v", err)
+		}
+		log.Println(tableName)
+	}
+}
+
 func InitDB() {
 	// Use the External Database URL from Render
 	var err error

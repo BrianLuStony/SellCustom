@@ -75,6 +75,7 @@ type Mutation {
     deleteProduct(id: ID!): Boolean!
     createOrder(input: OrderInput!): Order!
     createReview(input: ReviewInput!): Review!
+    createCategory(input: CategoryInput!): Category!
 }
 
 input ProductInput {
@@ -83,6 +84,11 @@ input ProductInput {
     price: Float!
     stockQuantity: Int!
     categoryId: ID!
+}
+
+input CategoryInput {
+    name: String!
+    parentId: ID
 }
 
 input OrderInput {

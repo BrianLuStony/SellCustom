@@ -62,3 +62,22 @@ func (r *MutationResolver) CreateReview(ctx context.Context, args struct{ Input 
 	}
 	return &ReviewResolver{*review}, nil
 }
+
+func (r *MutationResolver) CreateCategory(ctx context.Context, args struct{ Input models.CategoryInput }) (*CategoryResolver, error) {
+	var parentID *int32
+	if args.Input.ParentID != nil {
+		id, err := strconv.ParseInt(*args.Input.ParentID, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid parent ID: %v", err)
+		}
+		parentIDInt32 := int32(id)
+		parentID = &parentIDInt32
+	}
+
+	// Use the new method name here
+	category, err := r.m.CreateNewCategory(args.Input.Name, parentID)
+	if err != nil {
+		return nil, err
+	}
+	return &CategoryResolver{*category}, nil
+}
