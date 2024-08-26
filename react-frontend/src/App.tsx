@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Home from '@/pages/Home';
 import AddProduct from './pages/AddProduct';
+import AddCategory from './pages/AddCategory';
 import About from '@/pages/About';
 import Header from "@/components/header"
 import Footer from '@/components/footer';
@@ -56,6 +57,7 @@ const App: React.FC = () => {
             'loading'
           )}
           {showPopup && <SubscriptionPopup onClose={handleClosePopup} />}
+          <AddCategory />
           <AddProduct />
         </div>
       </Router>

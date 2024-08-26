@@ -312,7 +312,7 @@ func (r *Resolver) UserOrders(ctx context.Context, args struct{ UserID graphql.I
 
 // Resolves a list of all categories
 func (r *Resolver) Categories(ctx context.Context) ([]*CategoryResolver, error) {
-	rows, err := db.DB.Query("SELECT id, name, parent_category_id FROM categories")
+	rows, err := db.DB.Query("SELECT id, name, parent_id FROM categories")
 	if err != nil {
 		return nil, err
 	}
@@ -321,13 +321,13 @@ func (r *Resolver) Categories(ctx context.Context) ([]*CategoryResolver, error) 
 	var categories []*CategoryResolver
 	for rows.Next() {
 		var c models.Category
-		var parentCategoryID sql.NullInt32
-		if err := rows.Scan(&c.ID, &c.Name, &parentCategoryID); err != nil {
+		var parentID sql.NullInt32
+		if err := rows.Scan(&c.ID, &c.Name, &parentID); err != nil {
 			return nil, err
 		}
 
-		if parentCategoryID.Valid {
-			c.ParentCategory = &models.Category{ID: parentCategoryID.Int32}
+		if parentID.Valid {
+			c.ParentCategory = &models.Category{ID: parentID.Int32}
 		}
 
 		categories = append(categories, &CategoryResolver{c})
@@ -357,7 +357,7 @@ func (r *Resolver) CreateCategory(ctx context.Context, args struct{ Input models
 	// Insert the new category
 	var categoryID int32
 	err = tx.QueryRow(`
-        INSERT INTO categories (name, parent_category_id)
+        INSERT INTO categories (name, parent_id)
         VALUES ($1, $2)
         RETURNING id
     `, args.Input.Name, parentID).Scan(&categoryID)
@@ -373,7 +373,7 @@ func (r *Resolver) CreateCategory(ctx context.Context, args struct{ Input models
 	// Fetch the newly created category
 	var c models.Category
 	err = db.DB.QueryRow(`
-        SELECT id, name, parent_category_id
+        SELECT id, name, parent_id
         FROM categories WHERE id = $1
     `, categoryID).Scan(&c.ID, &c.Name, &c.ParentCategory)
 	if err != nil {
