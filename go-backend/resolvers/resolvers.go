@@ -121,8 +121,18 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 	}
 	defer tx.Rollback()
 
+	// Check if the category exists
+	var categoryExists bool
+	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)", args.Input.CategoryID).Scan(&categoryExists)
+	if err != nil {
+		return nil, err
+	}
+	if !categoryExists {
+		return nil, fmt.Errorf("category with ID %d does not exist", args.Input.CategoryID)
+	}
+
 	// Insert the new product
-	var productID int
+	var productID int32
 	err = tx.QueryRow(`
         INSERT INTO products (name, description, price, stock_quantity, category_id)
         VALUES ($1, $2, $3, $4, $5)
@@ -147,7 +157,10 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 		return nil, err
 	}
 
-	return &ProductResolver{p}, nil
+	// Initialize the Category field
+	p.Category = &models.Category{ID: p.CategoryID}
+
+	return &ProductResolver{p: p}, nil
 }
 
 func (r *Resolver) UpdateProduct(ctx context.Context, args struct {

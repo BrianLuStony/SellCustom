@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"go-backend/db"
 	"go-backend/models"
@@ -34,9 +35,17 @@ func (r *ProductResolver) StockQuantity() int32 {
 }
 
 func (r *ProductResolver) Category(ctx context.Context) (*CategoryResolver, error) {
+
+	if r.p.CategoryID == 0 {
+		return nil, nil
+	}
+
 	var c models.Category
-	err := db.DB.QueryRow("SELECT id, name, parent_category_id FROM categories WHERE id = $1", r.p.CategoryID).Scan(&c.ID, &c.Name, &c.ParentCategory.ID)
+	err := db.DB.QueryRow("SELECT id, name FROM categories WHERE id = $1", r.p.CategoryID).Scan(&c.ID, &c.Name)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &CategoryResolver{c}, nil
