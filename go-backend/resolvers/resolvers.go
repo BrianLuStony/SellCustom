@@ -123,12 +123,12 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 
 	// Check if the category exists
 	var categoryExists bool
-	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)", args.Input.CategoryID).Scan(&categoryExists)
+	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)", category_id).Scan(&categoryExists)
 	if err != nil {
 		return nil, err
 	}
 	if !categoryExists {
-		return nil, fmt.Errorf("category with ID %d does not exist", args.Input.CategoryID)
+		return nil, fmt.Errorf("category with ID %d does not exist", category_id)
 	}
 
 	// Insert the new product

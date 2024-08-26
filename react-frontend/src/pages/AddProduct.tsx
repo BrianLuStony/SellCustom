@@ -17,7 +17,14 @@ const CREATE_PRODUCT = gql`
 `;
 
 const AddProduct: React.FC = () => {
-  const [createProduct, { data, loading, error }] = useMutation(CREATE_PRODUCT);
+  const [createProduct, { data, loading, error }] = useMutation(CREATE_PRODUCT, {
+    onError: (error) => {
+      console.error('Error creating product:', error);
+      console.error('GraphQL Errors:', error.graphQLErrors);
+      console.error('Network Error:', error.networkError);
+    },
+  });
+  
   const [productInput, setProductInput] = useState({
     name: '',
     description: '',
