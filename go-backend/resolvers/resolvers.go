@@ -336,6 +336,53 @@ func (r *Resolver) Categories(ctx context.Context) ([]*CategoryResolver, error) 
 	return categories, nil
 }
 
+func (r *Resolver) CreateCategory(ctx context.Context, args struct{ Input models.CategoryInput }) (*CategoryResolver, error) {
+	var parentID *int32
+	if args.Input.ParentID != nil {
+		id, err := strconv.ParseInt(*args.Input.ParentID, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("invalid parent ID: %v", err)
+		}
+		parentIDInt32 := int32(id)
+		parentID = &parentIDInt32
+	}
+
+	// Start a transaction
+	tx, err := db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	// Insert the new category
+	var categoryID int32
+	err = tx.QueryRow(`
+        INSERT INTO categories (name, parent_category_id)
+        VALUES ($1, $2)
+        RETURNING id
+    `, args.Input.Name, parentID).Scan(&categoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	// Fetch the newly created category
+	var c models.Category
+	err = db.DB.QueryRow(`
+        SELECT id, name, parent_category_id
+        FROM categories WHERE id = $1
+    `, categoryID).Scan(&c.ID, &c.Name, &c.ParentCategory)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CategoryResolver{c}, nil
+}
+
 // ProductResolver resolves the Product type
 
 // ReviewResolver resolves the Review type
