@@ -84,6 +84,12 @@ input ProductInput {
     price: Float!
     stockQuantity: Int!
     categoryId: ID!
+    images: [ProductImageInput!]
+}
+
+input ProductImageInput {
+  imageUrl: String!
+  isPrimary: Boolean!
 }
 
 input CategoryInput {
