@@ -22,6 +22,7 @@ type Product struct {
 
 type ProductImage struct {
 	ID        int32  `json:"id"`
+	ProductID int32  `json:"-"`
 	ImageUrl  string `json:"imageUrl"`
 	IsPrimary bool   `json:"isPrimary"`
 }
@@ -86,11 +87,17 @@ type Mutation struct {
 }
 
 type ProductInput struct {
-	Name          string  `json:"name"`
-	Description   *string `json:"description,omitempty"`
-	Price         float64 `json:"price"`
-	StockQuantity int32   `json:"stockQuantity"`
-	CategoryID    int32   `json:"categoryId"`
+	Name          string               `json:"name"`
+	Description   *string              `json:"description,omitempty"`
+	Price         float64              `json:"price"`
+	StockQuantity int32                `json:"stockQuantity"`
+	CategoryID    int32                `json:"categoryId"`
+	Images        []*ProductImageInput `json:"images,omitempty"`
+}
+
+type ProductImageInput struct {
+	ImageUrl  string `json:"imageUrl"`
+	IsPrimary bool   `json:"isPrimary"`
 }
 
 type OrderInput struct {

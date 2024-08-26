@@ -17,14 +17,18 @@ const CREATE_PRODUCT = gql`
 `;
 
 const AddProduct: React.FC = () => {
-  const [createProduct, { data, loading, error }] = useMutation(CREATE_PRODUCT, {
+  const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
     onError: (error) => {
       console.error('Error creating product:', error);
       console.error('GraphQL Errors:', error.graphQLErrors);
       console.error('Network Error:', error.networkError);
     },
+    onCompleted: () => {
+      setSuccessMessage('Product added successfully!');
+      resetForm();
+    },
   });
-  
+
   const [productInput, setProductInput] = useState({
     name: '',
     description: '',
@@ -33,31 +37,34 @@ const AddProduct: React.FC = () => {
     categoryId: '',
   });
 
+  const [successMessage, setSuccessMessage] = useState('');
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProductInput(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const input = {
-      ...productInput,
-      price: parseFloat(productInput.price),
-      stockQuantity: parseInt(productInput.stockQuantity, 10),
-      categoryId: parseInt(productInput.categoryId, 10),
-    };
-    createProduct({ 
-      variables: { 
-        input: {
-          ...input,
-          stockQuantity: input.stockQuantity || 0, // Ensure it's a number, default to 0 if NaN
-        } 
-      } 
+  const resetForm = () => {
+    setProductInput({
+      name: '',
+      description: '',
+      price: '',
+      stockQuantity: '',
+      categoryId: '',
     });
   };
 
-  if (loading) return <p>Submitting...</p>;
-  if (error) return <p>Error: {error.message}</p>;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSuccessMessage('');
+    const input = {
+      ...productInput,
+      price: parseFloat(productInput.price),
+      stockQuantity: parseInt(productInput.stockQuantity, 10) || 0,
+      categoryId: parseInt(productInput.categoryId, 10),
+    };
+    createProduct({ variables: { input } });
+  };
 
   return (
     <div>
@@ -100,9 +107,13 @@ const AddProduct: React.FC = () => {
           value={productInput.categoryId}
           onChange={handleChange}
         />
-        <button type="submit">Add Product</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Adding...' : 'Add Product'}
+        </button>
       </form>
-      {data && <p>Product added: {data.createProduct.name}</p>}
+      {loading && <p>Submitting...</p>}
+      {error && <p>Error: {error.message}</p>}
+      {successMessage && <p>{successMessage}</p>}
     </div>
   );
 };
