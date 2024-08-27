@@ -22,6 +22,7 @@ type Product struct {
 
 type ProductImage struct {
 	ID        int32  `json:"id"`
+	ProductID int32  `json:"-"`
 	ImageUrl  string `json:"imageUrl"`
 	IsPrimary bool   `json:"isPrimary"`
 }

@@ -227,6 +227,21 @@ func (r *Resolver) UpdateProduct(ctx context.Context, args struct {
 		return nil, err
 	}
 
+	_, err = tx.Exec("DELETE FROM images WHERE product_id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, imgInput := range args.Input.Images {
+		_, err = tx.Exec(`
+            INSERT INTO images (product_id, url, is_primary)
+            VALUES ($1, $2, $3)
+        `, id, imgInput.ImageUrl, imgInput.IsPrimary)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Commit the transaction
 	if err = tx.Commit(); err != nil {
 		return nil, err
