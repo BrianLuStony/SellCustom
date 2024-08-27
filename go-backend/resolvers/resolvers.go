@@ -142,6 +142,16 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 		return nil, err
 	}
 
+	for _, img := range args.Input.Images {
+		_, err = tx.Exec(`
+            INSERT INTO product_images (product_id, image_url, is_primary)
+            VALUES ($1, $2, $3)
+        `, productID, img.ImageUrl, img.IsPrimary)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Commit the transaction
 	if err = tx.Commit(); err != nil {
 		return nil, err
@@ -161,6 +171,34 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 	p.Category = &models.Category{ID: p.CategoryID}
 
 	return &ProductResolver{p: p}, nil
+}
+
+func (r *Resolver) AddProductImage(ctx context.Context, args struct {
+	ProductID graphql.ID
+	Input     models.ProductImageInput
+}) (*ProductImageResolver, error) {
+	productID, err := strconv.Atoi(string(args.ProductID))
+	if err != nil {
+		return nil, fmt.Errorf("invalid product ID: %v", err)
+	}
+
+	var imageID int32
+	err = db.DB.QueryRow(`
+        INSERT INTO product_images (product_id, image_url, is_primary)
+        VALUES ($1, $2, $3)
+        RETURNING id
+    `, productID, args.Input.ImageUrl, args.Input.IsPrimary).Scan(&imageID)
+	if err != nil {
+		return nil, err
+	}
+
+	img := models.ProductImage{
+		ID:        imageID,
+		ImageUrl:  args.Input.ImageUrl,
+		IsPrimary: args.Input.IsPrimary,
+	}
+
+	return &ProductImageResolver{i: img}, nil
 }
 
 func (r *Resolver) UpdateProduct(ctx context.Context, args struct {
