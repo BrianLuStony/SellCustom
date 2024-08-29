@@ -52,7 +52,7 @@ func (r *ProductResolver) Category(ctx context.Context) (*CategoryResolver, erro
 }
 
 func (r *ProductResolver) Images(ctx context.Context) ([]*ProductImageResolver, error) {
-	rows, err := db.DB.Query("SELECT id, url, is_primary FROM product_images WHERE product_id = $1", r.p.ID)
+	rows, err := db.DB.Query("SELECT id, image_url, is_primary FROM product_images WHERE product_id = $1", r.p.ID)
 	if err != nil {
 		return nil, err
 	}
