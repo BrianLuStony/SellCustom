@@ -85,7 +85,7 @@ input ProductInput {
     price: Float!
     stockQuantity: Int!
     categoryId: ID!
-    images: [ProductImageInput!]
+    images: [ProductImageInput!]!
 }
 
 input ProductImageInput {
