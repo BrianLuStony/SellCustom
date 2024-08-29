@@ -92,7 +92,7 @@ type ProductInput struct {
 	Price         float64              `json:"price"`
 	StockQuantity int32                `json:"stockQuantity"`
 	CategoryID    int32                `json:"categoryId"`
-	Images        []*ProductImageInput `json:"images,omitempty"`
+	Images        []*ProductImageInput `json:"images"`
 }
 
 type ProductImageInput struct {

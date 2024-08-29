@@ -130,22 +130,24 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 
 	var productID int32
 	err = tx.QueryRow(`
-		INSERT INTO products (name, description, price, stock_quantity, category_id)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
-	`, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, categoryID).Scan(&productID)
+        INSERT INTO products (name, description, price, stock_quantity, category_id)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
+    `, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, categoryID).Scan(&productID)
 	if err != nil {
 		return nil, err
 	}
 
 	if args.Input.Images != nil {
 		for _, imgInput := range args.Input.Images {
-			_, err = tx.Exec(`
-				INSERT INTO images (product_id, url, is_primary)
-				VALUES ($1, $2, $3)
-			`, productID, imgInput.ImageUrl, imgInput.IsPrimary)
-			if err != nil {
-				return nil, err
+			if imgInput != nil {
+				_, err = tx.Exec(`
+                    INSERT INTO images (product_id, url, is_primary)
+                    VALUES ($1, $2, $3)
+                `, productID, imgInput.ImageUrl, imgInput.IsPrimary)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -156,9 +158,9 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 
 	var p models.Product
 	err = db.DB.QueryRow(`
-		SELECT id, name, description, price, stock_quantity, category_id
-		FROM products WHERE id = $1
-	`, productID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
+        SELECT id, name, description, price, stock_quantity, category_id
+        FROM products WHERE id = $1
+    `, productID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
 	if err != nil {
 		return nil, err
 	}
