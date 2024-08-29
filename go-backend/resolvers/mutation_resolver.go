@@ -15,7 +15,22 @@ type MutationResolver struct {
 
 func (r *MutationResolver) CreateProduct(ctx context.Context, args struct{ Input models.ProductInput }) (*ProductResolver, error) {
 	// Ensure stockQuantity is an int
-	product, err := r.m.CreateProduct(args.Input)
+	categoryID, err := strconv.ParseInt(string(args.Input.CategoryID), 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid category ID: %v", err)
+	}
+
+	// Create a new ProductInput with the correct types
+	input := models.ProductInput{
+		Name:          args.Input.Name,
+		Description:   args.Input.Description,
+		Price:         args.Input.Price,
+		StockQuantity: args.Input.StockQuantity,
+		CategoryID:    int32(categoryID),
+		Images:        args.Input.Images,
+	}
+
+	product, err := r.m.CreateProduct(input)
 	if err != nil {
 		return nil, err
 	}
