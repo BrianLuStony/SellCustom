@@ -138,7 +138,7 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 		return nil, err
 	}
 
-	if args.Input.Images != nil {
+	if len(args.Input.Images) > 0 {
 		for _, imgInput := range args.Input.Images {
 			_, err = tx.Exec(`
 				INSERT INTO images (product_id, url, is_primary)
