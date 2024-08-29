@@ -76,6 +76,7 @@ type Mutation {
     createOrder(input: OrderInput!): Order!
     createReview(input: ReviewInput!): Review!
     createCategory(input: CategoryInput!): Category!
+    addProductImage(productId: ID!, input: ProductImageInput!): ProductImage!
 }
 
 input ProductInput {
@@ -88,8 +89,8 @@ input ProductInput {
 }
 
 input ProductImageInput {
-  imageUrl: String!
-  isPrimary: Boolean!
+    imageUrl: String!
+    isPrimary: Boolean!
 }
 
 input CategoryInput {
@@ -102,6 +103,7 @@ input OrderInput {
     totalAmount: Float!
     items: [OrderItemInput!]!
 }
+
 
 input OrderItemInput {
     productId: ID!
