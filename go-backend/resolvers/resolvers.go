@@ -110,64 +110,59 @@ func (r *Resolver) Order(ctx context.Context, args struct{ ID graphql.ID }) (*Or
 }
 
 func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.ProductInput }) (*ProductResolver, error) {
-	// Start a transaction
-
-	stockQuantity := int(args.Input.StockQuantity)
-	category_id := int(args.Input.CategoryID)
-
 	tx, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback()
 
-	// Check if the category exists
+	stockQuantity := int(args.Input.StockQuantity)
+	categoryID := int(args.Input.CategoryID)
+
 	var categoryExists bool
-	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)", category_id).Scan(&categoryExists)
+	err = tx.QueryRow("SELECT EXISTS(SELECT 1 FROM categories WHERE id = $1)", categoryID).Scan(&categoryExists)
 	if err != nil {
 		return nil, err
 	}
 	if !categoryExists {
-		return nil, fmt.Errorf("category with ID %d does not exist", category_id)
+		return nil, fmt.Errorf("category with ID %d does not exist", categoryID)
 	}
 
-	// Insert the new product
 	var productID int32
 	err = tx.QueryRow(`
-        INSERT INTO products (name, description, price, stock_quantity, category_id)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id
-    `, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, category_id).Scan(&productID)
+		INSERT INTO products (name, description, price, stock_quantity, category_id)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
+	`, args.Input.Name, args.Input.Description, args.Input.Price, stockQuantity, categoryID).Scan(&productID)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, imgInput := range args.Input.Images {
-		_, err = tx.Exec(`
-            INSERT INTO images (product_id, url, is_primary)
-            VALUES ($1, $2, $3)
-        `, productID, imgInput.ImageUrl, imgInput.IsPrimary)
-		if err != nil {
-			return nil, err
+	if args.Input.Images != nil {
+		for _, imgInput := range args.Input.Images {
+			_, err = tx.Exec(`
+				INSERT INTO images (product_id, url, is_primary)
+				VALUES ($1, $2, $3)
+			`, productID, imgInput.ImageUrl, imgInput.IsPrimary)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
-	// Commit the transaction
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	// Fetch the newly created product
 	var p models.Product
 	err = db.DB.QueryRow(`
-        SELECT id, name, description, price, stock_quantity, category_id
-        FROM products WHERE id = $1
-    `, productID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
+		SELECT id, name, description, price, stock_quantity, category_id
+		FROM products WHERE id = $1
+	`, productID).Scan(&p.ID, &p.Name, &p.Description, &p.Price, &p.StockQuantity, &p.CategoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize the Category field
 	p.Category = &models.Category{ID: p.CategoryID}
 
 	return &ProductResolver{p: p}, nil
