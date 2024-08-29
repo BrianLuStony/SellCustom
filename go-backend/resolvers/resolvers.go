@@ -141,7 +141,7 @@ func (r *Resolver) CreateProduct(ctx context.Context, args struct{ Input models.
 	if len(args.Input.Images) > 0 {
 		for _, imgInput := range args.Input.Images {
 			_, err = tx.Exec(`
-				INSERT INTO images (product_id, url, is_primary)
+				INSERT INTO product_images (product_id, image_url, is_primary)
 				VALUES ($1, $2, $3)
 			`, productID, imgInput.ImageUrl, imgInput.IsPrimary)
 			if err != nil {

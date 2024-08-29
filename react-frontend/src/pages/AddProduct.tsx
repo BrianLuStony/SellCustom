@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { gql, useMutation } from '@apollo/client';
+import * as UploadcareWidget from '@uploadcare/react-widget';
 
 const CREATE_PRODUCT = gql`
   mutation CreateProduct($input: ProductInput!) {
@@ -20,8 +21,6 @@ const AddProduct: React.FC = () => {
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
     onError: (error) => {
       console.error('Error creating product:', error);
-      console.error('GraphQL Errors:', error.graphQLErrors);
-      console.error('Network Error:', error.networkError);
     },
     onCompleted: () => {
       setSuccessMessage('Product added successfully!');
@@ -35,6 +34,7 @@ const AddProduct: React.FC = () => {
     price: '',
     stockQuantity: '',
     categoryId: '',
+    images: [] as { imageUrl: string; isPrimary: boolean }[], // Initialize with correct type
   });
 
   const [successMessage, setSuccessMessage] = useState('');
@@ -44,6 +44,13 @@ const AddProduct: React.FC = () => {
     setProductInput(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleImageUpload = (fileInfo :any) => {
+    setProductInput(prev => ({
+      ...prev,
+      images: [...prev.images, { imageUrl: fileInfo.cdnUrl, isPrimary: true }],
+    }));
+  };
+
   const resetForm = () => {
     setProductInput({
       name: '',
@@ -51,6 +58,7 @@ const AddProduct: React.FC = () => {
       price: '',
       stockQuantity: '',
       categoryId: '',
+      images: [],
     });
   };
 
@@ -107,6 +115,13 @@ const AddProduct: React.FC = () => {
           value={productInput.categoryId}
           onChange={handleChange}
         />
+
+        {/* Uploadcare Widget for Image Upload */}
+        <UploadcareWidget.Widget
+          publicKey="3cb90b7ae33a12d4d266" // Replace with your actual public key
+          onChange={handleImageUpload}
+        />
+
         <button type="submit" disabled={loading}>
           {loading ? 'Adding...' : 'Add Product'}
         </button>
