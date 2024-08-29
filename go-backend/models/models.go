@@ -87,12 +87,12 @@ type Mutation struct {
 }
 
 type ProductInput struct {
-	Name          string               `json:"name"`
-	Description   *string              `json:"description,omitempty"`
-	Price         float64              `json:"price"`
-	StockQuantity int32                `json:"stockQuantity"`
-	CategoryID    int32                `json:"categoryId"`
-	Images        []*ProductImageInput `json:"images"`
+	Name          string              `json:"name"`
+	Description   *string             `json:"description,omitempty"`
+	Price         float64             `json:"price"`
+	StockQuantity int32               `json:"stockQuantity"`
+	CategoryID    int32               `json:"categoryId"`
+	Images        []ProductImageInput `json:"images,omitempty"`
 }
 
 type ProductImageInput struct {
