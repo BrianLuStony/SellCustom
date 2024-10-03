@@ -273,6 +273,9 @@ func uploadHandlerGET(w http.ResponseWriter, r *http.Request) {
 
 func uploadHandlerPOST(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+
+	file, fileHeader, err := r.FormFile("file")
+
 	id := vars["id"]
 
 	mu.Lock()
