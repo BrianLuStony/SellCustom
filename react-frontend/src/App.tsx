@@ -22,6 +22,7 @@ const client = new ApolloClient({
 const App: React.FC = () => {
   const [data, setData] = useState<Data | null>(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   useEffect(() => {
     fetch('https://sellcustombackend.onrender.com/api/data') // Update with your backend URL
@@ -37,6 +38,10 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+  };
+
   const handleClosePopup = () => {
     setShowPopup(false); // Close the pop-up when user clicks 'No, Thanks'
   };
@@ -45,9 +50,9 @@ const App: React.FC = () => {
     <ApolloProvider client={client}>
       <Router>
         <div className="App">
-          <Header />
+          <Header onSearch={handleSearch}/>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Home searchTerm={searchTerm}/>} />
             <Route path="/about" element={<About />} />
           </Routes>
           <Footer />
