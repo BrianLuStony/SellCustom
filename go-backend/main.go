@@ -256,6 +256,8 @@ func uploadHandlerGET(w http.ResponseWriter, r *http.Request) {
 		<form action="/upload/{{.ID}}" method="post" enctype="multipart/form-data">
 			<input type="file" name="file" accept="image/*">
 			<button type="submit">Upload</button>
+			<input type="file" name="file" accept="image/*" capture="camera">
+			<button type="submit">Take Photo</button>
 		</form>
 	</body>
 	</html>
