@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -88,11 +89,12 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 	}).Methods("OPTIONS")
 
-	r.HandleFunc("/register", registerHandler).Methods("POST")
-	r.HandleFunc("/login", loginHandler).Methods("POST")
-	r.HandleFunc("/generate-qr", generateQRHandler).Methods("GET")
-	r.HandleFunc("/upload/{id}", uploadHandler).Methods("POST")
-	r.HandleFunc("/user/images", getUserImagesHandler).Methods("GET")
+	r.HandleFunc("/register", registerHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/login", loginHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/generate-qr", generateQRHandler).Methods("GET", "OPTIONS")
+	r.HandleFunc("/upload/{id}", uploadHandlerGET).Methods("GET", "OPTIONS")
+	r.HandleFunc("/upload/{id}", uploadHandlerPOST).Methods("POST", "OPTIONS")
+	r.HandleFunc("/user/images", getUserImagesHandler).Methods("GET", "OPTIONS")
 
 	// Set up the REST endpoint
 	r.HandleFunc("/api/data", GetData).Methods("GET")
@@ -224,6 +226,91 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	mu.Unlock()
 
 	response := map[string]string{"message": "File uploaded successfully", "imageUrl": image.URL}
+	json.NewEncoder(w).Encode(response)
+}
+func uploadHandlerGET(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	mu.Lock()
+	_, exists := qrCodes[id]
+	mu.Unlock()
+
+	if !exists {
+		http.Error(w, "Invalid or expired QR code", http.StatusBadRequest)
+		return
+	}
+
+	// Serve a simple HTML page for file upload
+	html := `
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<title>Upload Image</title>
+	</head>
+	<body>
+		<h1>Upload Image</h1>
+		<form action="/upload/{{.ID}}" method="post" enctype="multipart/form-data">
+			<input type="file" name="file" accept="image/*">
+			<button type="submit">Upload</button>
+		</form>
+	</body>
+	</html>
+	`
+
+	tmpl, err := template.New("upload").Parse(html)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	tmpl.Execute(w, struct{ ID string }{ID: id})
+}
+
+func uploadHandlerPOST(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	mu.Lock()
+	qrCode, exists := qrCodes[id]
+	mu.Unlock()
+
+	if !exists || time.Now().After(qrCode.ExpiresAt) {
+		http.Error(w, "Invalid or expired QR code", http.StatusBadRequest)
+		return
+	}
+
+	// Parse the multipart form data
+	err := r.ParseMultipartForm(10 << 20) // 10 MB max
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Here you would typically save the file to a storage service
+	// For this example, we'll just create a dummy UploadedImage
+	imageID := uuid.New().String()
+	image := UploadedImage{
+		ID:     imageID,
+		UserID: qrCode.UserID,
+		URL:    fmt.Sprintf("http://example.com/images/%s", imageID),
+	}
+
+	mu.Lock()
+	uploadedImages[qrCode.UserID] = append(uploadedImages[qrCode.UserID], image)
+	delete(qrCodes, id)
+	mu.Unlock()
+
+	response := map[string]string{"message": "File uploaded successfully", "imageUrl": image.URL}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
 
