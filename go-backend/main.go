@@ -124,6 +124,8 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, _ := store.Get(r, "session")
 	session.Values["userID"] = user.ID
+	session.Options.SameSite = http.SameSiteNoneMode
+	session.Options.Secure = true
 	session.Save(r, w)
 
 	json.NewEncoder(w).Encode(user)
@@ -139,8 +141,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// In a real application, you would validate the credentials here
-	// For this example, we'll just find a user with the given username
 	var user User
 	for _, u := range users {
 		if u.Username == credentials.Username {
@@ -156,6 +156,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	session, _ := store.Get(r, "session")
 	session.Values["userID"] = user.ID
+	session.Options.SameSite = http.SameSiteNoneMode
+	session.Options.Secure = true
 	session.Save(r, w)
 
 	json.NewEncoder(w).Encode(user)
@@ -171,7 +173,7 @@ func generateQRHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := uuid.New().String()
 	expiresAt := time.Now().Add(5 * time.Minute)
-	uploadURL := fmt.Sprintf("http://localhost:3000/upload/%s", id)
+	uploadURL := fmt.Sprintf("https://%s/upload/%s", r.Host, id) // Use the actual host
 
 	qrCode := QRCode{
 		ID:        id,
