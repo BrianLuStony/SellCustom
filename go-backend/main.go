@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"sync"
@@ -295,14 +298,74 @@ func uploadHandlerPOST(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Here you would typically save the file to a storage service
-	// For this example, we'll just create a dummy UploadedImage
+	uploadURL := "https://upload.uploadcare.com/base/"
+	apiKey := "3cb90b7ae33a12d4d266"
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	err = writer.WriteField("UPLOADCARE_PUB_KEY", apiKey)
+	if err != nil {
+		http.Error(w, "Error creating form", http.StatusInternalServerError)
+		return
+	}
+	filePart, err := writer.CreateFormFile("file", fileHeader.Filename)
+	if err != nil {
+		http.Error(w, "Error creating form file part", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = io.Copy(filePart, file)
+	if err != nil {
+		http.Error(w, "Error copying file", http.StatusInternalServerError)
+		return
+	}
+
+	writer.Close()
+	req, err := http.NewRequest("POST", uploadURL, body)
+	if err != nil {
+		http.Error(w, "Error creating upload request", http.StatusInternalServerError)
+		return
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Error uploading to Uploadcare", http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Error from Uploadcare", resp.StatusCode)
+		return
+	}
+
+	var uploadResponse map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&uploadResponse); err != nil {
+		http.Error(w, "Error decoding upload response", http.StatusInternalServerError)
+		return
+	}
+
+	imageURL := fmt.Sprintf("https://ucarecdn.com/%s/", uploadResponse["file"])
+
+	// Create the UploadedImage entry
 	imageID := uuid.New().String()
 	image := UploadedImage{
 		ID:     imageID,
 		UserID: qrCode.UserID,
-		URL:    fmt.Sprintf("http://example.com/images/%s", imageID),
+		URL:    imageURL,
 	}
+
+	// // Here you would typically save the file to a storage service
+	// // For this example, we'll just create a dummy UploadedImage
+	// imageID := uuid.New().String()
+	// image := UploadedImage{
+	// 	ID:     imageID,
+	// 	UserID: qrCode.UserID,
+	// 	URL:    fmt.Sprintf("http://example.com/images/%s", imageID),
+	// }
 
 	mu.Lock()
 	uploadedImages[qrCode.UserID] = append(uploadedImages[qrCode.UserID], image)
